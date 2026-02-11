@@ -1,8 +1,12 @@
 // main.js
 // Entry point for Crustal Wars — initializes the Phaser game engine
+// and registers all game scenes.
 
 import Phaser from "phaser";
 import BootScene from "./scenes/BootScene.js";
+import MenuScene from "./scenes/MenuScene.js";
+import GameScene from "./scenes/GameScene.js";
+import GameOverScene from "./scenes/GameOverScene.js";
 
 const config = {
   type: Phaser.AUTO,
@@ -16,8 +20,8 @@ const config = {
   physics: {
     default: "arcade",
     arcade: {
-      gravity: { y: 0 },
-      debug: false,
+      gravity: { y: 0 }, // Top-down game, no gravity
+      debug: false, // Set to true to see hitboxes
     },
   },
 
@@ -26,7 +30,8 @@ const config = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
 
-  scene: [BootScene],
+  // Scenes load in order — BootScene runs first
+  scene: [BootScene, MenuScene, GameScene, GameOverScene],
 };
 
 const game = new Phaser.Game(config);
