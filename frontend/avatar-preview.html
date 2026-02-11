@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crustal Wars — Avatar Generator Preview</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0a0e1a;
+      color: #d0d8e8;
+      font-family: 'Courier New', monospace;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00ffcc;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 18px;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #4a6a8a;
+      font-size: 13px;
+      margin-bottom: 30px;
+    }
+
+    /* === CONTROLS === */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #1a2a3a;
+      color: #00ffcc;
+      border: 2px solid #00ffcc;
+      padding: 10px 20px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    button:hover {
+      background: #00ffcc;
+      color: #0a0e1a;
+    }
+
+    button.active {
+      background: #00ffcc;
+      color: #0a0e1a;
+    }
+
+    /* === AVATAR DISPLAY === */
+    .avatar-display {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 40px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+
+    .avatar-card {
+      background: #111827;
+      border: 2px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+
+    .avatar-card:hover {
+      border-color: #00ffcc;
+    }
+
+    .avatar-card canvas {
+      display: block;
+      margin: 0 auto 15px auto;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 1px solid #1e3a5f;
+    }
+
+    .avatar-card h3 {
+      color: #00ffcc;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      margin-bottom: 10px;
+      text-transform: capitalize;
+    }
+
+    .trait-list {
+      font-size: 11px;
+      color: #6a8aaa;
+      line-height: 1.8;
+      text-align: left;
+    }
+
+    .trait-list span {
+      color: #aaccee;
+    }
+
+    /* === GRID OF ALL SPECIES === */
+    .species-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      max-width: 900px;
+      margin: 0 auto 30px auto;
+    }
+
+    .species-grid .avatar-card {
+      padding: 14px;
+    }
+
+    .species-grid .avatar-card canvas {
+      width: 128px;
+      height: 128px;
+    }
+
+    /* === EXPORT SECTION === */
+    .export-section {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .export-section a {
+      color: #00ffcc;
+      text-decoration: underline;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* === SEED INPUT === */
+    .seed-section {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .seed-section input {
+      background: #111827;
+      border: 2px solid #1e3a5f;
+      color: #d0d8e8;
+      padding: 8px 14px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      width: 400px;
+      max-width: 60vw;
+    }
+
+    .seed-section input:focus {
+      outline: none;
+      border-color: #00ffcc;
+    }
+
+    .section-label {
+      text-align: center;
+      color: #4a6a8a;
+      font-size: 12px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+
+    hr {
+      border: none;
+      border-top: 1px solid #1e3a5f;
+      margin: 30px auto;
+      max-width: 600px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🦀 Avatar Generator</h1>
+  <p class="subtitle">CryptoPunks-style Programmatic Pixel Art — 7 Sea Creature Species</p>
+
+  <!-- Random generation controls -->
+  <div class="controls">
+    <button id="btn-random">🎲 Random Avatar</button>
+    <button id="btn-all">🐙 Show All Species</button>
+    <button id="btn-export">💾 Export PNG</button>
+  </div>
+
+  <!-- Seed-based generation -->
+  <div class="seed-section">
+    <input type="text" id="seed-input" placeholder="Paste a hex seed (e.g., 0xabc123...) for deterministic generation" />
+    <button id="btn-seed">🔗 From Seed</button>
+  </div>
+
+  <hr />
+
+  <!-- Single avatar display -->
+  <div id="single-display" class="avatar-display"></div>
+
+  <!-- All species grid -->
+  <div id="species-grid" class="species-grid" style="display: none;"></div>
+
+  <script type="module">
+    import AvatarGenerator from "./js/avatar/AvatarGenerator.js";
+
+    const generator = new AvatarGenerator();
+    let currentPNG = null;
+
+    // === GENERATE A RANDOM AVATAR ===
+    function showRandom() {
+      const display = document.getElementById("single-display");
+      const grid = document.getElementById("species-grid");
+      grid.style.display = "none";
+      display.innerHTML = "";
+
+      const { canvas, png, traits } = generator.generateRandom();
+      currentPNG = png;
+
+      display.appendChild(createCard(canvas, traits));
+    }
+
+    // === SHOW ALL 7 SPECIES ===
+    function showAllSpecies() {
+      const display = document.getElementById("single-display");
+      const grid = document.getElementById("species-grid");
+      display.innerHTML = "";
+      grid.innerHTML = "";
+      grid.style.display = "grid";
+
+      const species = [
+        "lobster", "squid", "octopus", "shrimp",
+        "hermitCrab", "nautilus", "pufferfish",
+      ];
+
+      species.forEach((sp) => {
+        const { canvas, png, traits } = generator.generate(sp);
+        grid.appendChild(createCard(canvas, traits));
+      });
+    }
+
+    // === GENERATE FROM SEED ===
+    function generateFromSeed() {
+      const input = document.getElementById("seed-input").value.trim();
+      if (!input) {
+        alert("Please enter a hex seed (e.g., 0xabc123def456...)");
+        return;
+      }
+
+      const display = document.getElementById("single-display");
+      const grid = document.getElementById("species-grid");
+      grid.style.display = "none";
+      display.innerHTML = "";
+
+      const { canvas, png, traits } = generator.generateFromSeed(input);
+      currentPNG = png;
+
+      display.appendChild(createCard(canvas, traits));
+    }
+
+    // === EXPORT CURRENT AVATAR AS PNG ===
+    function exportPNG() {
+      if (!currentPNG) {
+        alert("Generate an avatar first!");
+        return;
+      }
+
+      const link = document.createElement("a");
+      link.download = "crustal-wars-avatar.png";
+      link.href = currentPNG;
+      link.click();
+    }
+
+    // === CREATE AN AVATAR CARD DOM ELEMENT ===
+    function createCard(canvas, traits) {
+      const card = document.createElement("div");
+      card.className = "avatar-card";
+
+      // Style the canvas for display
+      canvas.style.width = "192px";
+      canvas.style.height = "192px";
+      canvas.style.imageRendering = "pixelated";
+
+      const title = document.createElement("h3");
+      title.textContent = traits.species.replace("hermitCrab", "Hermit Crab");
+
+      const traitList = document.createElement("div");
+      traitList.className = "trait-list";
+      traitList.innerHTML = `
+        Eyes: <span>${traits.eyeStyle}</span><br/>
+        Pattern: <span>${traits.pattern}</span><br/>
+        Accessory: <span>${traits.accessory}</span><br/>
+        Iris: <span style="color:${traits.irisColor}">●</span> ${traits.irisColor}<br/>
+        Body: <span style="color:${traits.palette.body}">■</span>
+        <span style="color:${traits.palette.accent}">■</span>
+        <span style="color:${traits.palette.dark}">■</span>
+        <span style="color:${traits.palette.light}">■</span>
+      `;
+
+      card.appendChild(canvas);
+      card.appendChild(title);
+      card.appendChild(traitList);
+
+      // Save PNG for single avatar export
+      currentPNG = canvas.toDataURL("image/png");
+
+      return card;
+    }
+
+    // === WIRE UP BUTTONS ===
+    document.getElementById("btn-random").addEventListener("click", showRandom);
+    document.getElementById("btn-all").addEventListener("click", showAllSpecies);
+    document.getElementById("btn-export").addEventListener("click", exportPNG);
+    document.getElementById("btn-seed").addEventListener("click", generateFromSeed);
+
+    // Also allow Enter key in seed input
+    document.getElementById("seed-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") generateFromSeed();
+    });
+
+    // Generate one random avatar on page load
+    showRandom();
+  </script>
+
+</body>
+</html>
