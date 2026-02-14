@@ -7,6 +7,7 @@ import BootScene from "./scenes/BootScene.js";
 import MenuScene from "./scenes/MenuScene.js";
 import GameScene from "./scenes/GameScene.js";
 import GameOverScene from "./scenes/GameOverScene.js";
+import LeaderboardScene from "./scenes/LeaderboardScene.js";
 
 const config = {
   type: Phaser.AUTO,
@@ -20,8 +21,8 @@ const config = {
   physics: {
     default: "arcade",
     arcade: {
-      gravity: { y: 0 }, // Top-down game, no gravity
-      debug: false, // Set to true to see hitboxes
+      gravity: { y: 0 },
+      debug: false,
     },
   },
 
@@ -30,8 +31,7 @@ const config = {
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
 
-  // Scenes load in order — BootScene runs first
-  scene: [BootScene, MenuScene, GameScene, GameOverScene],
+  scene: [BootScene, MenuScene, GameScene, GameOverScene, LeaderboardScene],
 };
 
 const game = new Phaser.Game(config);

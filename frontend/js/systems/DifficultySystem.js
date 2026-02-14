@@ -1,55 +1,71 @@
 // systems/DifficultySystem.js
-// Manages difficulty scaling across levels.
-// Each level: more enemies, faster enemies, shrinking arena.
+// Manages difficulty scaling with 4 modes: Easy, Medium, Hard, Crazy Hard.
+// Each mode multiplies enemy stats, spawn rates, and rewards differently.
+
+import { DIFFICULTY_MODES } from "../scenes/MenuScene.js";
 
 export default class DifficultySystem {
-  constructor() {
+  /**
+   * @param {string} mode - "easy", "medium", "hard", or "crazy"
+   */
+  constructor(mode = "medium") {
     this.level = 1;
+    this.mode = mode;
+    this.modeConfig = DIFFICULTY_MODES[mode] || DIFFICULTY_MODES.medium;
 
-    // Base arena bounds (full game area)
+    // Base arena bounds
     this.baseArena = { x: 40, y: 50, width: 720, height: 500 };
-
-    // Current arena (shrinks each level)
     this.arena = { ...this.baseArena };
   }
 
   /**
-   * Get the configuration for the current level.
+   * Get configuration for the current level, scaled by difficulty mode.
    */
   getLevelConfig() {
     const level = this.level;
+    const mc = this.modeConfig;
 
     return {
-      // How many enemies to spawn this level
-      enemyCount: Math.min(5 + level * 2, 30), // Starts at 7, caps at 30
+      // Enemy count scaled by mode
+      enemyCount: Math.min(
+        Math.round((5 + level * 2) * mc.spawnMultiplier),
+        40
+      ),
 
-      // Enemy composition weights (what % of each type spawns)
-      // Early levels: mostly crabs. Later: more eels and lava fish.
+      // Enemy type weights
       weights: {
         crab: Math.max(0.2, 0.6 - level * 0.05),
         eel: Math.min(0.4, 0.2 + level * 0.03),
         lavafish: Math.min(0.4, 0.2 + level * 0.02),
       },
 
-      // Difficulty multiplier for enemy stats (HP, speed)
-      difficultyMultiplier: 1 + (level - 1) * 0.15,
+      // Enemy stats multiplier (HP, speed) — combines level + mode
+      difficultyMultiplier: (1 + (level - 1) * 0.15) * mc.enemyMultiplier,
 
-      // Spawn interval: how frequently new enemies appear (ms)
-      spawnInterval: Math.max(800, 2000 - level * 150),
+      // Speed multiplier for enemies
+      speedMultiplier: mc.speedMultiplier,
 
-      // Arena shrink: reduce play area each level
-      arenaShrink: Math.min(level * 15, 120), // Max shrink of 120px per side
+      // Spawn interval (lower = faster spawns)
+      spawnInterval: Math.max(
+        500,
+        Math.round((2000 - level * 150) / mc.spawnMultiplier)
+      ),
+
+      // Arena shrink per level
+      arenaShrink: Math.min(level * 15, 120),
+
+      // Reward multiplier for scoring
+      rewardMultiplier: mc.rewardMultiplier,
     };
   }
 
   /**
-   * Advance to the next level and update arena bounds.
+   * Advance to next level.
    */
   nextLevel() {
     this.level++;
     const config = this.getLevelConfig();
 
-    // Shrink the arena
     const shrink = config.arenaShrink;
     this.arena = {
       x: this.baseArena.x + shrink,
@@ -58,45 +74,46 @@ export default class DifficultySystem {
       height: this.baseArena.height - shrink * 2,
     };
 
-    // Minimum arena size
     if (this.arena.width < 200) this.arena.width = 200;
     if (this.arena.height < 200) this.arena.height = 200;
 
     return config;
   }
 
-  /**
-   * Get current arena bounds.
-   */
   getArena() {
     return { ...this.arena };
   }
 
   /**
-   * Get a random spawn position on the edge of the arena
-   * (enemies spawn from the borders, not on top of the player).
+   * Get a random spawn position on the arena edge.
    */
   getSpawnPosition() {
     const a = this.arena;
-    const side = Math.floor(Math.random() * 4); // 0=top, 1=right, 2=bottom, 3=left
+    const side = Math.floor(Math.random() * 4);
 
     switch (side) {
-      case 0: // Top edge
-        return { x: a.x + Math.random() * a.width, y: a.y };
-      case 1: // Right edge
-        return { x: a.x + a.width, y: a.y + Math.random() * a.height };
-      case 2: // Bottom edge
-        return { x: a.x + Math.random() * a.width, y: a.y + a.height };
-      case 3: // Left edge
-        return { x: a.x, y: a.y + Math.random() * a.height };
-      default:
-        return { x: a.x, y: a.y };
+      case 0: return { x: a.x + Math.random() * a.width, y: a.y };
+      case 1: return { x: a.x + a.width, y: a.y + Math.random() * a.height };
+      case 2: return { x: a.x + Math.random() * a.width, y: a.y + a.height };
+      case 3: return { x: a.x, y: a.y + Math.random() * a.height };
+      default: return { x: a.x, y: a.y };
     }
   }
 
   /**
-   * Reset to level 1.
+   * Get the reward multiplier label for display.
    */
+  getRewardLabel() {
+    return this.modeConfig.rewardLabel;
+  }
+
+  /**
+   * Get the mode color.
+   */
+  getModeColor() {
+    return this.modeConfig.color;
+  }
+
   reset() {
     this.level = 1;
     this.arena = { ...this.baseArena };
